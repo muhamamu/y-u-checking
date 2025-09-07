@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Name Classifier</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .input-section {
+            margin-bottom: 20px;
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        input[type="text"] {
+            padding: 10px;
+            width: 70%;
+            margin-right: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #results {
+            margin-top: 20px;
+            padding-top: 20px;
+        }
+        .result-item {
+            margin-bottom: 10px;
+            padding: 15px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .disclaimer {
+            font-size: 12px;
+            color: #777;
+            margin-top: 30px;
+            text-align: center;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+        }
+        #nameDatabaseList {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        #nameDatabaseList ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        #nameDatabaseList li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        #nameDatabaseList li:last-child {
+            border-bottom: none;
+        }
+        .name-origin {
+            color: #666;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <h1>Name Classifier</h1>
+    
+    <div class="input-section">
+        <h3>Enter a Name:</h3>
+        <input type="text" id="nameInput" placeholder="Enter a name">
+        <button onclick="classifySingleName()">Classify</button>
+    </div>
+    
+    <div class="input-section">
+        <h3>Enter Multiple Names:</h3>
+        <input type="text" id="multipleNamesInput" placeholder="Enter names separated by commas">
+        <button onclick="classifyMultipleNames()">Classify All</button>
+    </div>
+    
+    <div id="results">
+        <h3>Classification Results:</h3>
+        <div id="resultsList"></div>
+    </div>
+    
+    <div class="input-section">
+        <h3>Name Database Information:</h3>
+        <button onclick="showNameDatabase()">Show Name Database</button>
+        <div id="nameDatabase" style="display: none; margin-top: 15px;">
+            <h4>Names used for classification:</h4>
+            <div id="nameDatabaseList" class="result-item"></div>
+        </div>
+    </div>
+    
+    <p class="disclaimer">
+        Note: This tool is based on user-provided criteria and is not meant to be stereotypical or offensive.
+        The classification is purely based on name patterns, cultural associations, and regional information (such as "North Africa", "Western countries", etc.).
+        This information is not indicative of any individual's actual ethnicity or background.
+        If a name is not found in either database, the system will attempt to classify it based on origins and regional patterns, or indicate that it doesn't have enough information to classify it.
+    </p>
+
+    <script src="blackNameClassifier.js"></script>
+    <script>
+        // Function to classify a single name from the input field
+        function classifySingleName() {
+            const nameInput = document.getElementById('nameInput');
+            const name = nameInput.value.trim();
+            
+            if (name === '') {
+                alert('Please enter a name');
+                return;
+            }
+            
+            const result = classifyName(name);
+            displayResults([result]);
+        }
+        
+        // Function to classify multiple names from the input field
+        function classifyMultipleNames() {
+            const multipleNamesInput = document.getElementById('multipleNamesInput');
+            const namesString = multipleNamesInput.value.trim();
+            
+            if (namesString === '') {
+                alert('Please enter names separated by commas');
+                return;
+            }
+            
+            const names = namesString.split(',').map(name => name.trim()).filter(name => name !== '');
+            const results = names.map(name => classifyName(name));
+            displayResults(results);
+        }
+        
+        // Function to display results in the results section
+        function displayResults(results) {
+            const resultsList = document.getElementById('resultsList');
+            resultsList.innerHTML = '';
+            
+            results.forEach(result => {
+                const resultItem = document.createElement('div');
+                resultItem.className = 'result-item';
+                resultItem.textContent = result;
+                resultsList.appendChild(resultItem);
+            });
+        }
+        
+        // Function to display the name database information
+        function showNameDatabase() {
+            const nameDatabase = document.getElementById('nameDatabase');
+            const nameDatabaseList = document.getElementById('nameDatabaseList');
+            
+            // Toggle display
+            if (nameDatabase.style.display === 'none') {
+                nameDatabase.style.display = 'block';
+                
+                // Get the names arrays and nameInfo object from the blackNameClassifier.js
+                let databaseHTML = '<h4>Black Names:</h4><ul>';
+                
+                // Display black names
+                if (typeof blackNames !== 'undefined') {
+                    blackNames.forEach(name => {
+                        let info = '';
+                        if (typeof nameInfo !== 'undefined' && nameInfo[name]) {
+                            info = `<span class="name-origin">${nameInfo[name].origin} origin, meaning "${nameInfo[name].meaning}"`;                            
+                            if (nameInfo[name].region) {
+                                info += `, region: ${nameInfo[name].region}`;
+                            }
+                            info += `</span>`;
+                        }
+                        databaseHTML += `<li><strong>${name.charAt(0).toUpperCase() + name.slice(1)}</strong> ${info}</li>`;
+                    });
+                } else {
+                    databaseHTML += '<li>Black name database information not available</li>';
+                }
+                
+                databaseHTML += '</ul><h4>White Names:</h4><ul>';
+                
+                // Display white names
+                if (typeof whiteNames !== 'undefined') {
+                    whiteNames.forEach(name => {
+                        let info = '';
+                        if (typeof nameInfo !== 'undefined' && nameInfo[name]) {
+                            info = `<span class="name-origin">${nameInfo[name].origin} origin, meaning "${nameInfo[name].meaning}"`;                            
+                            if (nameInfo[name].region) {
+                                info += `, region: ${nameInfo[name].region}`;
+                            }
+                            info += `</span>`;
+                        }
+                        databaseHTML += `<li><strong>${name.charAt(0).toUpperCase() + name.slice(1)}</strong> ${info}</li>`;
+                    });
+                } else {
+                    databaseHTML += '<li>White name database information not available</li>';
+                }
+                
+                databaseHTML += '</ul>';
+                nameDatabaseList.innerHTML = databaseHTML;
+            } else {
+                nameDatabase.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
